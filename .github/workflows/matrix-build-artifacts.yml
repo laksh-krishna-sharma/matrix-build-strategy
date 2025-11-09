@@ -1,0 +1,60 @@
+name: Matrix Build with Artifacts (build-f777b6b)
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    # matrix includes 3+ distinct variants (combination of os and node versions).
+    # This will create 6 parallel jobs (3 OS × 2 Node versions). You can reduce or expand as desired.
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [14, 18]
+        # optional: fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: matrix-f777b6b
+        # This exact name is required by the validation step in your spec
+        run: |
+          echo "Running matrix job on $RUNNER_OS (matrix: os=${{ matrix.os }}, node=${{ matrix.node-version }})"
+          echo "JOB_VARIANT=${{ matrix.os }}-node${{ matrix.node-version }}" > job_variant.txt
+        shell: bash
+
+      - name: Install (no-op example)
+        run: |
+          # simulate a build step that produces output
+          node -v || true
+          echo "Simulating build..." >> job_variant.txt
+        shell: bash
+
+      - name: Generate build artifact file
+        run: |
+          # compose a unique artifact filename using the matrix values
+          ARTNAME="build-f777b6b-${{ matrix.os }}-node${{ matrix.node-version }}.txt"
+          echo "Artifact variant: $ARTNAME" > "$ARTNAME"
+          echo "Runner OS: $RUNNER_OS" >> "$ARTNAME"
+          echo "Matrix OS: ${{ matrix.os }}" >> "$ARTNAME"
+          echo "Node version: ${{ matrix.node-version }}" >> "$ARTNAME"
+          echo "Timestamp: $(date --iso-8601=seconds 2>/dev/null || date)" >> "$ARTNAME"
+          # show file content and ensure non-empty
+          ls -l "$ARTNAME"
+          cat "$ARTNAME"
+        shell: bash
+
+      - name: Upload artifact (build-f777b6b)
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-f777b6b-${{ matrix.os }}-node${{ matrix.node-version }}
+          path: |
+            build-f777b6b-${{ matrix.os }}-node${{ matrix.node-version }}.txt
+            job_variant.txt
